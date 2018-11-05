@@ -1,0 +1,34 @@
+{
+    "name": "node_starter",
+    "version": "1.0.0",
+    "description": "Starter for node project",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "build": "rimraf dist/ && babel ./ --out-dir dist/ --ignore ./node_modules,./.babelrc,./package.json,./npm-debug.log --copy-files",
+        "start": "npm run build && node dist/index.js"
+    },
+    "keywords": [
+        "test"
+    ],
+    "author": "Mobiliya_Sachin_wagh_demo",
+    "license": "ISC",
+    "dependencies": {
+        "async": "^2.6.1",
+        "body-parser": "^1.18.3",
+        "dotenv": "^6.1.0",
+        "express": "^4.16.4",
+        "jwt-simple": "^0.5.5",
+        "md5": "^2.2.1",
+        "mongoose": "^5.3.8",
+        "mongoose-timestamp": "^0.6.0",
+        "mongoose-unique-validator": "^2.0.2",
+        "morgan": "^1.9.1",
+        "path": "^0.12.7",
+        "underscore": "^1.9.1"
+    },
+    "devDependencies": {
+        "babel-cli": "^6.26.0",
+        "babel-preset-es2015": "^6.24.1"
+    }
+}
