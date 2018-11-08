@@ -7,6 +7,11 @@ var mongoose = require('mongoose')
 require('dotenv').config()
 var bodyParser = require('body-parser')
 var helper = require('./utils/helper');
+
+var cookieParser = require('cookie-parser');
+
+//const OAuth2Server = require('oauth2-server');
+
 /**
  * To Log req in file
  */
@@ -17,7 +22,7 @@ app.use(morgan('combined', { stream: accessLogStream }))
 app.use(bodyParser.urlencoded({ extended: false }))
     // parse application/json
 app.use(bodyParser.json())
-
+app.use(cookieParser())
 
 /**
  * Request and response handler
@@ -25,6 +30,22 @@ app.use(bodyParser.json())
 app.use(require('./utils/requestHandler'))
 app.use(require('./utils/responseHandler'))
 
+/**
+ * Oauth2
+ */
+
+// app.oauth = new OAuth2Server({
+//     debug: true,
+//     model: require('./controllers/oauthModel'),
+//     allowBearerTokensInQueryString: true,
+//     accessTokenLifetime: 4 * 60 * 60
+// });
+
+// const Request = OAuth2Server.Request;
+// const Response = OAuth2Server.Response;
+// let request = new Request();
+// let response = new Response();
+//app.use(app.oauth.authorize());
 /**
  * Handling cors
  */
@@ -56,3 +77,5 @@ mongoose.connect(process.env.MONGO_URL, function(error) {
         console.log("Server started on port: ", process.env.port || 8080)
     })
 });
+
+module.exports = app;
