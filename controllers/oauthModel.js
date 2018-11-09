@@ -2,6 +2,7 @@ var OAuthTokensModel = require('../modals/oauthTokens');
 var OAuthClientsModel = require('../modals/clients');
 var OAuthUsersModel = require('../modals/user');
 var OAuthAuthcodeModel = require('../modals/oauthAuthCodes');
+var async = require('async');
 
 /**
  * Get access token.
@@ -64,40 +65,60 @@ module.exports.getUser = function(username, password) {
  */
 
 module.exports.saveAuthorizationCode = function(code, client, user) {
-    return OAuthAuthcodeModel.create({
-        authorization_code: code.authorizationCode,
-        expires_at: code.expiresAt,
-        redirect_uri: code.redirectUri,
-        scope: code.scope,
-        client_id: client.id,
-        user_id: user._id
-    }, function(err, authorizationCode) {
-        if (err) {
-            return null;
-        } else {
-            return {
-                authorizationCode: authorizationCode.authorization_code,
-                expiresAt: authorizationCode.expires_at,
-                redirectUri: authorizationCode.redirect_uri,
-                scope: authorizationCode.scope,
-                client: { id: authorizationCode.client_id },
-                user: { id: authorizationCode.user_id }
-            }
+    var authcode = new OAuthAuthcodeModel();
+    authcode.authorization_code = code.authorizationCode,
+        authcode.expires_at = code.expiresAt,
+        authcode.redirect_uri = code.redirectUri,
+        authcode.scope = code.scope,
+        authcode.client_id = client.id,
+        authcode.user_id = user._id
+
+    return new Promise(function(resolve, reject) {
+        authcode.save(function(err, data) {
+            if (err) reject(err);
+            else resolve(data);
+        });
+    }).then(function(authorizationCode) {
+        console.log(authorizationCode)
+        return {
+            authorizationCode: authorizationCode.authorization_code,
+            expiresAt: authorizationCode.expires_at,
+            redirectUri: authorizationCode.redirect_uri,
+            scope: authorizationCode.scope,
+            client: { id: authorizationCode.client_id },
+            user: { id: authorizationCode.user_id }
         }
-    })
+    });
+
+    // let a = authcode.save(function(err, authorizationCode) {
+    //     if (err) {
+    //         return null;
+    //     } else {
+    //         console.log(authorizationCode)
+    //         return {
+    //             authorizationCode: authorizationCode.authorization_code,
+    //             expiresAt: authorizationCode.expires_at,
+    //             redirectUri: authorizationCode.redirect_uri,
+    //             scope: authorizationCode.scope,
+    //             client: { id: authorizationCode.client_id },
+    //             user: { id: authorizationCode.user_id }
+    //         }
+    //     }
+    // })
+    // return a;
 }
 
 
 module.exports.saveToken = function(token, client, user) {
     var accessToken = new OAuthTokensModel({
         accessToken: token.accessToken,
-        accessTokenExpiresAt: token.accessTokenExpiresOn,
+        accessTokenExpiresAt: token.accessTokenExpiresAt,
         client: client,
         clientId: client.clientId,
         refreshToken: token.refreshToken,
-        refreshTokenExpiresAt: token.refreshTokenExpiresOn,
+        refreshTokenExpiresAt: token.refreshTokenExpiresAt,
         user: user,
-        userId: user._id,
+        userId: user.id,
     });
     // Can't just chain `lean()` to `save()` as we did with `findOne()` elsewhere. Instead we use `Promise` to resolve the data.
     return new Promise(function(resolve, reject) {
@@ -120,3 +141,41 @@ module.exports.saveToken = function(token, client, user) {
         return data;
     });
 };
+
+module.exports.getAuthorizationCode = function(authcode) {
+    return new Promise(function(resolve, reject) {
+        OAuthAuthcodeModel.findOne({ authorization_code: authcode })
+            .populate('client_id')
+            .populate('user_id')
+            .exec(function(err, data) {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(data);
+                }
+            })
+    }).then(function(authcodedetails) {
+        return {
+            authorizationCode: authcodedetails.authorization_code,
+            expiresAt: authcodedetails.expires_at,
+            redirectUri: authcodedetails.redirect_uri,
+            scope: authcodedetails.scope,
+            client: authcodedetails.client_id, // with 'id' property
+            user: authcodedetails.user_id
+        };
+    })
+}
+
+module.exports.revokeAuthorizationCode = function(authcode) {
+    return new Promise(function(resolve, reject) {
+        OAuthAuthcodeModel.deleteOne({ authorization_code: authcode.code }, function(err, data) {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(data);
+            }
+        })
+    }).then(function(authcodedetails) {
+        return authcode;
+    })
+}
